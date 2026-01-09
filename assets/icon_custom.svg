@@ -1,0 +1,31 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d1b4e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d0d1a;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <rect cx="64" cy="64" width="128" height="128" rx="24" fill="url(#bgGrad)" />
+  
+  <!-- Card Shape -->
+  <rect x="32" y="24" width="64" height="88" rx="6" fill="#f0f0f0" filter="url(#glow)" />
+  
+  <!-- Suit (Spade) -->
+  <path d="M64 40 C 50 40, 40 55, 40 65 C 40 78, 64 96, 64 96 C 64 96, 88 78, 88 65 C 88 55, 78 40, 64 40 Z M 60 88 L 68 88 L 64 78 Z" fill="#1a1a1a" />
+  
+  <!-- Text "40" -->
+  <text x="64" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="24" fill="#d4af37" stroke="#000" stroke-width="0.5">40</text>
+  
+  <!-- Glitch/Tech accents -->
+  <rect x="20" y="60" width="12" height="4" fill="#00ffff" opacity="0.8" />
+  <rect x="96" y="70" width="12" height="4" fill="#ff00ff" opacity="0.8" />
+</svg>

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/scripts/resources/CardData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+card_name = "Queen of Hearts"
+suit = "Hearts"
+value = 12
+description = "Queen of Hearts in the Hearts suit."

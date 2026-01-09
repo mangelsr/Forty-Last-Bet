@@ -16,8 +16,13 @@ config/name_localized={
 }
 config/description="A roguelite card game inspired by Ecuadorian Cuarenta"
 config/version="0.0.1"
+run/main_scene="uid://cyam48ucuwca8"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[autoload]
+
+GameManager="*res://src/core/GameManager.gd"
 
 [internationalization]
 

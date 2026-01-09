@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3 uid="uid://c1234568aa"]
+
+[ext_resource type="PackedScene" uid="uid://b1234568aa" path="res://src/scenes/cards/CardUI.tscn" id="1_card_ui"]
+[ext_resource type="Resource" path="res://data/cards/ace_spades.tres" id="2_ace"]
+[ext_resource type="Resource" path="res://data/cards/4_hearts.tres" id="3_four"]
+
+[node name="TestScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -110.0
+offset_top = -75.0
+offset_right = 110.0
+offset_bottom = 75.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="CardUI_Ace" parent="HBoxContainer" instance=ExtResource("1_card_ui")]
+layout_mode = 2
+card_data = ExtResource("2_ace")
+
+[node name="CardUI_4" parent="HBoxContainer" instance=ExtResource("1_card_ui")]
+layout_mode = 2
+card_data = ExtResource("3_four")
