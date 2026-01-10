@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://capturechoice01"]
+[gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://src/scenes/ui/CaptureChoiceUI.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://t3gifpyuyd7b" path="res://src/scenes/ui/CaptureChoiceUI.gd" id="1_script"]
 
 [ext_resource type="Theme" uid="uid://maintheme" path="res://assets/theme/main_theme.tres" id="2_theme"]
 
