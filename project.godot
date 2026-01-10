@@ -18,11 +18,16 @@ config/description="A roguelite card game inspired by Ecuadorian Cuarenta"
 config/version="0.0.1"
 run/main_scene="uid://mainmenu001"
 config/features=PackedStringArray("4.5", "GL Compatibility")
-config/icon="res://icon.svg"
+boot_splash/image="uid://ciqwava4ym7xv"
+config/icon="uid://ciqwava4ym7xv"
 
 [autoload]
 
 GameManager="*res://src/core/GameManager.gd"
+
+[gui]
+
+theme/custom="uid://maintheme"
 
 [internationalization]
 
