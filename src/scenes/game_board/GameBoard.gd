@@ -4,6 +4,7 @@ extends Control
 # Main arena for "Fourty Last Bet".
 
 const CARD_UI_SCENE = preload("res://src/scenes/cards/CardUI.tscn")
+const GAME_OVER_MODAL_SCENE = preload("res://src/scenes/ui/GameOverModal.tscn")
 
 @onready var hand_container = %HandContainer
 @onready var opponent_hand_container = %OpponentHandContainer
@@ -49,6 +50,8 @@ func _on_game_event_occurred(type: String, team: String, points: int):
 			color = Color.MAGENTA
 		"CAPTURE":
 			color = Color.GREEN_YELLOW
+		"CARTON":
+			color = Color.SKY_BLUE
 	
 	# Translate team name using existing keys GAME_PLAYER / GAME_OPPONENT
 	var team_key = "GAME_" + team
@@ -58,32 +61,9 @@ func _on_game_event_occurred(type: String, team: String, points: int):
 	show_event_notification(label_text, color)
 
 func _on_game_over(winner_team: String, score_p: int, score_o: int):
-	# Translate winner team
-	var team_key = "GAME_" + winner_team
-	var team_text = tr(team_key)
-	
-	var msg = tr("EVENT_VICTORY") + "! %s " + tr("EVENT_WINS") + " (%d - %d)"
-	msg = msg % [team_text, score_p, score_o]
-	var color = Color.GOLD if winner_team == "PLAYER" else Color.TOMATO
-	
-	# Show a special permanent notification
-	var label = Label.new()
-	label.text = msg
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", color)
-	label.add_theme_font_size_override("font_size", 72)
-	label.add_theme_color_override("font_outline_color", Color.BLACK)
-	label.add_theme_constant_override("outline_size", 12)
-	
-	label.anchors_preset = Control.PRESET_CENTER
-	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	label.grow_vertical = Control.GROW_DIRECTION_BOTH
-	
-	message_container.add_child(label)
-	await get_tree().process_frame
-	label.pivot_offset = label.size / 2
-	
-	label.scale = Vector2.ZERO
+	var modal = GAME_OVER_MODAL_SCENE.instantiate()
+	add_child(modal)
+	modal.setup(winner_team, score_p, score_o)
 @onready var capture_choice_scene = preload("res://src/scenes/ui/CaptureChoiceUI.tscn")
 
 func _on_capture_choice_requested(options: Array):

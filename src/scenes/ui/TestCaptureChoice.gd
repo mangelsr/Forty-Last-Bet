@@ -10,8 +10,9 @@ func _on_test_button_pressed():
 	var option1 = [create_card(5, "Spades")]
 	var option2 = [create_card(2, "Hearts"), create_card(3, "Diamonds")]
 	var option3 = [create_card(1, "Clubs"), create_card(4, "Spades")]
+	var option4 = [create_card(5, "Diamonds"), create_card(6, "Hearts"), create_card(7, "Clubs")] # Stair
 	
-	var options = [option1, option2, option3]
+	var options = [option1, option2, option3, option4]
 	
 	ui.setup(options)
 	ui.option_selected.connect(func(index):

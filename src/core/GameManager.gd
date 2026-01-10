@@ -97,6 +97,9 @@ func play_card_to_table(card: CardData, from_player: bool):
 	# Identify all possible captures
 	var options = find_all_captures(card, cards_on_table)
 	
+	var player_name = "PLAYER" if from_player else "OPPONENT"
+	print(">>> [", player_name, "] plays ", str(card))
+	
 	if options.is_empty():
 		# No capture, simple play
 		cards_on_table.append(card)
@@ -124,13 +127,17 @@ func play_card_to_table(card: CardData, from_player: bool):
 			turn_changed.emit(current_state) # Lock input
 			capture_choice_requested.emit(options)
 
-func execute_capture(card: CardData, captured_cards: Array, from_player: bool):
+func execute_capture(played_card: CardData, captured_cards: Array, from_player: bool):
 	var is_caida = false
 	
-	# Check Caida: captured 1 card, matching value, and it was the last played
-	# We check value equality and ensure last_card_played is valid.
-	if captured_cards.size() == 1 and last_card_played != null and card.value == last_card_played.value and captured_cards[0].value == last_card_played.value:
-		is_caida = true
+	# Check Caida: The FIRST captured card matches the played card AND the last card played
+	if last_card_played != null and not captured_cards.is_empty():
+		var first_captured = captured_cards[0]
+		if first_captured.value == played_card.value and first_captured.value == last_card_played.value:
+			is_caida = true
+				
+	if is_caida:
+		print("    !!! CAIDA! Match found on first card.")
 		if from_player:
 			player_score += 2
 			game_event_occurred.emit("CAIDA", "PLAYER", 2)
@@ -139,6 +146,12 @@ func execute_capture(card: CardData, captured_cards: Array, from_player: bool):
 			game_event_occurred.emit("CAIDA", "OPPONENT", 2)
 		
 		if check_for_winner(): return
+	
+	# Log capture details
+	var cards_str = ""
+	for c in captured_cards:
+		cards_str += str(c) + " "
+	print("    Capture set: ", cards_str)
 	
 	# Process capture
 	last_capture_player = from_player
@@ -151,33 +164,11 @@ func execute_capture(card: CardData, captured_cards: Array, from_player: bool):
 	
 	# The played card is also captured
 	if from_player:
-		player_captured.append(card)
+		player_captured.append(played_card)
 	else:
-		opponent_captured.append(card)
+		opponent_captured.append(played_card)
 		
-	# Sequence Logic (Stair/Escalera)
-	# After the primary capture, check for sequential cards (J, Q, K...) remaining
-	# The sequence starts from the card VALUE
-	var next_val = get_next_in_sequence(card.value)
-	while next_val != -1:
-		var found_sequence_card = null
-		for table_card in cards_on_table:
-			if table_card.value == next_val:
-				found_sequence_card = table_card
-				break
-		
-		if found_sequence_card:
-			cards_on_table.erase(found_sequence_card)
-			if from_player:
-				player_captured.append(found_sequence_card)
-			else:
-				opponent_captured.append(found_sequence_card)
-			# print("Sequence capture: ", found_sequence_card.value)
-			next_val = get_next_in_sequence(next_val)
-		else:
-			break
-			
-	# Limpia Check (Performed AFTER sequence logic to ensure table is truly empty)
+	# Limpia Check (Performed AFTER removing cards)
 	if cards_on_table.is_empty():
 		# Rule: No Limpia on the very last play of the entire deck (standard Cuarenta rule, optional but good to have)
 		# For now, we'll keep it simple: if table empty, Limpia.
@@ -204,6 +195,7 @@ func execute_capture(card: CardData, captured_cards: Array, from_player: bool):
 	finalize_turn(from_player)
 
 func finalize_turn(from_player: bool):
+	_log_table_state()
 	if from_player:
 		change_turn(GameState.OPPONENT_TURN)
 	else:
@@ -215,7 +207,7 @@ func finalize_turn(from_player: bool):
 		else:
 			calculate_round_end_points()
 
-func check_caida_on_play(card, from_player, is_capture):
+func check_caida_on_play(_card, _from_player, _is_capture):
 	pass # Helper placeholder if needed
 
 # --- Helper Methods for Cuarenta Rules ---
@@ -225,10 +217,31 @@ func check_caida_on_play(card, from_player, is_capture):
 func find_all_captures(played_card: CardData, table_cards: Array[CardData]) -> Array:
 	var options: Array = []
 	
-	# Option 1: Direct match (Caida or regular match)
+	# Option 1: Direct match (Caida or regular match) + Sequence (Stair)
 	for c in table_cards:
 		if c.value == played_card.value:
-			options.append([c])
+			var match_option = [c]
+			
+			# Check for sequence starting from this match
+			var remaining_on_table = table_cards.duplicate()
+			remaining_on_table.erase(c)
+			
+			var next_val = get_next_in_sequence(played_card.value)
+			while next_val != -1:
+				var found_seq = null
+				for tc in remaining_on_table:
+					if tc.value == next_val:
+						found_seq = tc
+						break
+				
+				if found_seq:
+					match_option.append(found_seq)
+					remaining_on_table.erase(found_seq)
+					next_val = get_next_in_sequence(next_val)
+				else:
+					break
+			
+			options.append(match_option)
 	
 	# Option 2: Sum match (only if played_card is not a face card)
 	if played_card.value <= 7: # Face cards (J, Q, K) cannot capture by Sum
@@ -357,6 +370,7 @@ func calculate_round_end_points():
 		if cartón_points % 2 != 0:
 			cartón_points += 1 # Standard Cuarenta rule: round up to even
 		player_score += cartón_points
+		game_event_occurred.emit("CARTON", "PLAYER", cartón_points)
 		print("Player gets ", cartón_points, " points from cards.")
 		
 	if o_count > 19:
@@ -364,6 +378,7 @@ func calculate_round_end_points():
 		if cartón_points % 2 != 0:
 			cartón_points += 1
 		opponent_score += cartón_points
+		game_event_occurred.emit("CARTON", "OPPONENT", cartón_points)
 		print("Opponent gets ", cartón_points, " points from cards.")
 	
 	# Check for Winner
@@ -436,6 +451,15 @@ func check_for_ronda(is_player: bool):
 	# Update UI
 	turn_changed.emit(current_state)
 	check_for_winner()
+
+func _log_table_state():
+	if cards_on_table.is_empty():
+		print("--- Table: [EMPTY]")
+	else:
+		var s = "--- Table: "
+		for c in cards_on_table:
+			s += str(c) + " "
+		print(s)
 
 func change_turn(new_state: GameState):
 	current_state = new_state

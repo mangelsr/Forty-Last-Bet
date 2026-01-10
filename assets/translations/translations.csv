@@ -14,7 +14,9 @@ Capture cards to reach 40 points before your opponent!
 [b]SCORING[/b]
 [color=yellow]CAIDA (+2 pts)[/color]: Match the card your opponent JUST played.
 [color=cyan]LIMPIA (+2 pts)[/color]: Clear the entire table with your capture.
-[color=magenta]RONDA (+2 pts)[/color]: Start the round with 3 cards of the same value.
+[color=magenta]RONDA (+2 pts)[/color]: Have 3 cards of the same value in your initial hand.
+[color=magenta]DOBLE RONDA (+4 pts)[/color]: Have 4 cards of the same value in your initial hand.
+[color=skyblue]CARTON (+6+ pts)[/color]: Have 20 or more cards at round end.
 
 [b]WINNING[/b]
 The first player to reach 40 points wins the game!
@@ -29,7 +31,9 @@ The first player to reach 40 points wins the game!
 [b]PUNTUACIÓN[/b]
 [color=yellow]CAÍDA (+2 pts)[/color]: Iguala la carta que el oponente ACABA de jugar.
 [color=cyan]LIMPIA (+2 pts)[/color]: Deja la mesa vacía tras tu captura.
-[color=magenta]RONDA (+2 pts)[/color]: Inicia la ronda con 3 cartas del mismo valor.
+[color=magenta]RONDA (+2 pts)[/color]: Ten 3 cartas del mismo valor en tu mano inicial.
+[color=magenta]DOBLE RONDA (+4 pts)[/color]: Ten 4 cartas del mismo valor en tu mano inicial.
+[color=skyblue]CARTÓN (+6+ pts)[/color]: Ten 20 o más cartas al final de la ronda.
 
 [b]VICTORIA[/b]
 ¡El primero en llegar a 40 puntos gana!
