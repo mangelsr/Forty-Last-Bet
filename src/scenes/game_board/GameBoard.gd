@@ -244,7 +244,10 @@ func play_card_to_table(card_ui: CardUI, is_player: bool):
 	# Now check if it stayed on table or was a Caida/Capture
 	if card_ui.card_data in GameManager.cards_on_table:
 		table_grid.add_child(card_ui)
+		await get_tree().process_frame # Wait for container layout
 		card_ui.update_original_position()
+		var offset = table_grid.get_child_count() * 0.5
+		card_ui.start_wave_animation(offset)
 	else:
 		# It was captured or it's a Caida
 		card_ui.queue_free()

@@ -18,6 +18,9 @@ var drag_offset: Vector2 = Vector2.ZERO
 var original_position: Vector2 = Vector2.ZERO
 var target_rotation: float = 0.0
 
+var is_waving: bool = false
+var wave_offset: float = 0.0
+
 func _ready():
 	if card_data:
 		update_ui()
@@ -38,6 +41,12 @@ func _process(_delta):
 		var velocity = (target_pos - global_position).x
 		target_rotation = clamp(velocity * 0.05, -0.2, 0.2)
 		rotation = lerp_angle(rotation, target_rotation, 0.1)
+	elif is_waving:
+		# Synchronized up and down movement with offset
+		var time = Time.get_ticks_msec() / 1000.0
+		var wave = sin(time * 3.0 + wave_offset) * 4.0 # Speed 3.0, Amplitude 4px
+		global_position.y = original_position.y + wave
+		rotation = lerp_angle(rotation, 0, 0.1)
 	else:
 		rotation = lerp_angle(rotation, 0, 0.1)
 
@@ -76,23 +85,24 @@ func update_ui():
 	top_value_label.text = display_val
 	bottom_value_label.text = display_val
 	
-	var suit_symbol = "?"
+	var suit_path = "res://assets/textures/suits/"
 	var suit_color = Color.BLACK
 	
 	match card_data.suit:
-		"Spades": suit_symbol = "♠"
+		"Spades": suit_path += "spades.svg"
 		"Hearts":
-			suit_symbol = "♥"
+			suit_path += "hearts.svg"
 			suit_color = Color.RED
 		"Diamonds":
-			suit_symbol = "♦"
+			suit_path += "diamonds.svg"
 			suit_color = Color.RED
-		"Clubs": suit_symbol = "♣"
+		"Clubs": suit_path += "clubs.svg"
 	
-	suit_icon_label.text = suit_symbol
+	suit_icon_label.texture = load(suit_path)
+	suit_icon_label.modulate = suit_color
+	
 	top_value_label.add_theme_color_override("font_color", suit_color)
 	bottom_value_label.add_theme_color_override("font_color", suit_color)
-	suit_icon_label.add_theme_color_override("font_color", suit_color)
 
 func _on_gui_input(event: InputEvent):
 	if event is InputEventMouseButton:
@@ -164,3 +174,10 @@ func _on_mouse_exited():
 
 func update_original_position():
 	original_position = global_position
+
+func start_wave_animation(offset: float = 0.0):
+	is_waving = true
+	wave_offset = offset
+
+func stop_wave_animation():
+	is_waving = false

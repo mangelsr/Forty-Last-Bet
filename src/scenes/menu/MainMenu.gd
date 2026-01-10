@@ -21,6 +21,7 @@ func _on_lang_button_pressed():
 	_update_lang_button()
 
 func _on_play_button_pressed():
+	GameManager.reset_game()
 	get_tree().change_scene_to_file("res://src/scenes/game_board/GameBoard.tscn")
 
 func _on_how_to_play_button_pressed():

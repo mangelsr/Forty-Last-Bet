@@ -31,6 +31,23 @@ func _ready():
 	shuffle_deck()
 	print("GameManager initialized with ", deck.size(), " cards.")
 
+func reset_game():
+	print("Resetting Game State...")
+	player_score = 0
+	opponent_score = 0
+	player_hand.clear()
+	opponent_hand.clear()
+	cards_on_table.clear()
+	player_captured.clear()
+	opponent_captured.clear()
+	last_card_played = null
+	last_capture_player = true
+	is_game_over = false
+	current_state = GameState.PLAYER_TURN
+	
+	load_deck()
+	shuffle_deck()
+
 func load_deck():
 	deck.clear()
 	var path = "res://data/cards/"
@@ -39,6 +56,9 @@ func load_deck():
 		dir.list_dir_begin()
 		var file_name = dir.get_next()
 		while file_name != "":
+			if file_name.ends_with(".remap"):
+				file_name = file_name.trim_suffix(".remap")
+				
 			if file_name.ends_with(".tres"):
 				var card = load(path + file_name) as CardData
 				if card:

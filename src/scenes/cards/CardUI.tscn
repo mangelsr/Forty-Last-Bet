@@ -45,12 +45,12 @@ text = "A"
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SuitIcon" type="Label" parent="MarginContainer/VBoxContainer/CenterContainer"]
+[node name="SuitIcon" type="TextureRect" parent="MarginContainer/VBoxContainer/CenterContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 48
-text = "♠"
+expand_mode = 1
+stretch_mode = 5
 
 [node name="BottomValue" type="Label" parent="MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
