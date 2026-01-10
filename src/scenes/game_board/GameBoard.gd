@@ -18,6 +18,7 @@ func _ready():
 	GameManager.new_round_requested.connect(_on_new_round_requested)
 	GameManager.game_event_occurred.connect(_on_game_event_occurred)
 	GameManager.game_over.connect(_on_game_over)
+	GameManager.capture_choice_requested.connect(_on_capture_choice_requested)
 	# Wait a frame for layout to settle
 	await get_tree().process_frame
 	start_game()
@@ -30,7 +31,10 @@ func start_game():
 
 func _on_game_event_occurred(type: String, team: String, points: int):
 	var color = Color.WHITE
-	var text = type
+	# Map type to translation key (e.g. CAIDA -> EVENT_CAIDA, DOBLE RONDA -> EVENT_DOBLE_RONDA)
+	var tr_key = "EVENT_" + type.replace(" ", "_")
+	var text = tr(tr_key)
+	
 	if points > 0:
 		text += "! +" + str(points)
 	else:
@@ -46,11 +50,20 @@ func _on_game_event_occurred(type: String, team: String, points: int):
 		"CAPTURE":
 			color = Color.GREEN_YELLOW
 	
-	var label_text = "[%s] %s" % [team, text]
+	# Translate team name using existing keys GAME_PLAYER / GAME_OPPONENT
+	var team_key = "GAME_" + team
+	var team_text = tr(team_key)
+	
+	var label_text = "[%s] %s" % [team_text, text]
 	show_event_notification(label_text, color)
 
 func _on_game_over(winner_team: String, score_p: int, score_o: int):
-	var msg = "VICTORY! %s WINS (%d - %d)" % [winner_team, score_p, score_o]
+	# Translate winner team
+	var team_key = "GAME_" + winner_team
+	var team_text = tr(team_key)
+	
+	var msg = tr("EVENT_VICTORY") + "! %s " + tr("EVENT_WINS") + " (%d - %d)"
+	msg = msg % [team_text, score_p, score_o]
 	var color = Color.GOLD if winner_team == "PLAYER" else Color.TOMATO
 	
 	# Show a special permanent notification
@@ -71,8 +84,20 @@ func _on_game_over(winner_team: String, score_p: int, score_o: int):
 	label.pivot_offset = label.size / 2
 	
 	label.scale = Vector2.ZERO
-	var tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(label, "scale", Vector2(1.0, 1.0), 1.0)
+@onready var capture_choice_scene = preload("res://src/scenes/ui/CaptureChoiceUI.tscn")
+
+func _on_capture_choice_requested(options: Array):
+	var choice_ui = capture_choice_scene.instantiate()
+	add_child(choice_ui)
+	
+	# Pass data
+	choice_ui.setup(options)
+	
+	# Listen for selection
+	choice_ui.option_selected.connect(func(index):
+		GameManager.resolve_pending_capture(index)
+		# UI handles its own destruction
+	)
 
 func show_event_notification(text: String, color: Color):
 	var label = Label.new()
@@ -83,40 +108,67 @@ func show_event_notification(text: String, color: Color):
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
 	label.add_theme_constant_override("outline_size", 8)
 	
-	# Centering logic
-	label.anchors_preset = Control.PRESET_CENTER
-	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	label.grow_vertical = Control.GROW_DIRECTION_BOTH
+	# Use VBox for layout if not already
+	var vbox = message_container.get_node_or_null("MessageVBox")
+	if not vbox:
+		vbox = VBoxContainer.new()
+		vbox.name = "MessageVBox"
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.anchors_preset = Control.PRESET_CENTER
+		vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		vbox.grow_vertical = Control.GROW_DIRECTION_BOTH
+		# Ensure it's centered in the container (which is already centered)
+		message_container.add_child(vbox)
+		# Force update to ensure it centers
+		vbox.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+
+	# Create a slot for the message to reserve space in the VBox
+	var slot = Control.new()
+	slot.custom_minimum_size = Vector2(0, 60) # Reserve vertical space
+	slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(slot)
 	
-	message_container.add_child(label)
+	slot.add_child(label)
 	
-	# Wait for a frame to get correct size for pivot
+	# Wait for a frame to get correct size for centering
 	await get_tree().process_frame
+	
+	# Center label in slot
+	label.position = (slot.size - label.size) / 2
 	label.pivot_offset = label.size / 2
 	
-	# Offset based on existing messages to prevent overlap
-	var active_messages = message_container.get_child_count() - 1
-	var vertical_offset = active_messages * 60
-	label.position.y += vertical_offset
-	
-	# Initial state
-	label.scale = Vector2.ZERO
+	# Initial Animation State
 	label.modulate.a = 0
+	label.scale = Vector2(0.5, 0.5)
 	
+	# Animate
 	var tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(label, "scale", Vector2(1.2, 1.2), 0.4)
+	tween.tween_property(label, "scale", Vector2.ONE, 0.4)
 	tween.tween_property(label, "modulate:a", 1.0, 0.2)
+	# Float up relative to the slot
 	tween.tween_property(label, "position:y", label.position.y - 120, 1.5).set_trans(Tween.TRANS_SINE)
 	
-	# Fade out and kill
+	# Fade out and cleanup
 	var fade_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-	fade_tween.tween_interval(1.0)
+	fade_tween.tween_interval(1.5)
 	fade_tween.tween_property(label, "modulate:a", 0.0, 0.5)
-	fade_tween.tween_callback(label.queue_free)
+	# Remove the slot (parent), which removes the label too
+	fade_tween.tween_callback(slot.queue_free)
+	
+
+func _on_menu_button_pressed():
+	get_tree().change_scene_to_file("res://src/scenes/menu/MainMenu.tscn")
+	
+
+@onready var player_captured_label = %PlayerCapturedCount
+@onready var opponent_captured_label = %OpponentCapturedCount
 
 func update_scores():
-	player_score_label.text = "Player: " + str(GameManager.player_score)
-	opponent_score_label.text = "Opponent: " + str(GameManager.opponent_score)
+	player_score_label.text = tr("GAME_PLAYER") + ": " + str(GameManager.player_score)
+	opponent_score_label.text = tr("GAME_OPPONENT") + ": " + str(GameManager.opponent_score)
+	
+	player_captured_label.text = tr("GAME_MY_CARDS") + ": " + str(GameManager.player_captured.size())
+	opponent_captured_label.text = tr("GAME_OPP_CARDS") + ": " + str(GameManager.opponent_captured.size())
 
 func deal_round():
 	var p_cards = GameManager.deal_cards(5)

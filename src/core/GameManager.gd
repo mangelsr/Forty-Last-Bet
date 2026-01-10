@@ -51,115 +51,233 @@ func shuffle_deck():
 	deck.shuffle()
 
 func deal_cards(amount: int) -> Array[CardData]:
+	# Reset Caida state on new deal
+	last_card_played = null
+	
 	var dealt: Array[CardData] = []
 	for i in range(amount):
 		if deck.size() > 0:
 			dealt.append(deck.pop_back())
 	return dealt
 
+signal capture_choice_requested(options: Array)
+
+var pending_card_played: CardData = null
+var pending_from_player: bool = false
+
 func play_card_to_table(card: CardData, from_player: bool):
 	if is_game_over: return
 	
+	# Temporarily remove from hand (visual only, logic finalized on resolve)
 	if from_player:
 		player_hand.erase(card)
 	else:
 		opponent_hand.erase(card)
+		
+	# Identify all possible captures
+	var options = find_all_captures(card, cards_on_table)
 	
-	var captured_cards: Array[CardData] = []
+	if options.is_empty():
+		# No capture, simple play
+		cards_on_table.append(card)
+		last_card_played = card
+		check_caida_on_play(card, from_player, false) # Checks if this PLAY was a Caida (unlikely if empty options, but technically if Match existed we'd have an option. Caida logic is usually tied to capture.)
+		# Actually in Cuarenta, Caida IS a capture. So if options empty, no Caida.
+		finalize_turn(from_player)
+		
+	elif options.size() == 1:
+		# Single option, execute immediately
+		execute_capture(card, options[0], from_player)
+		
+	else:
+		# Multiple options, ask for choice
+		pending_card_played = card
+		pending_from_player = from_player
+		
+		# If AI, choose random
+		if not from_player:
+			var choice = options.pick_random()
+			execute_capture(card, choice, from_player)
+		else:
+			print("Ambiguous capture! Requesting user choice...")
+			current_state = GameState.WAITING
+			turn_changed.emit(current_state) # Lock input
+			capture_choice_requested.emit(options)
+
+func execute_capture(card: CardData, captured_cards: Array, from_player: bool):
 	var is_caida = false
 	
-	# 1. Check for Caida (match the last card played)
-	if last_card_played and last_card_played.value == card.value:
+	# Check Caida: captured 1 card, matching value, and it was the last played
+	# We check value equality and ensure last_card_played is valid.
+	if captured_cards.size() == 1 and last_card_played != null and card.value == last_card_played.value and captured_cards[0].value == last_card_played.value:
 		is_caida = true
-		captured_cards.append(last_card_played)
 		if from_player:
 			player_score += 2
 			game_event_occurred.emit("CAIDA", "PLAYER", 2)
-			print("CAIDA! Player +2")
 		else:
 			opponent_score += 2
 			game_event_occurred.emit("CAIDA", "OPPONENT", 2)
-			print("CAIDA! Opponent +2")
 		
-		is_caida = true
 		if check_for_winner(): return
-	if not is_caida:
-		var sum_match = find_subset_sum(card.value, cards_on_table)
-		if not sum_match.is_empty():
-			captured_cards.append_array(sum_match)
 	
-	# 3. Handle sequences after initial capture
-	if not captured_cards.is_empty():
-		# The "base" value for the sequence is the value of the card played
-		var next_val = get_next_in_sequence(card.value)
-		while next_val != -1:
-			var found_sequence_card = null
-			for table_card in cards_on_table:
-				if table_card.value == next_val and table_card not in captured_cards:
-					found_sequence_card = table_card
-					break
-			
-			if found_sequence_card:
-				captured_cards.append(found_sequence_card)
-				next_val = get_next_in_sequence(next_val)
-			else:
-				break
-	
-	# 4. Finalize captures
-	if captured_cards.size() > 0:
-		last_capture_player = from_player
-		for c in captured_cards:
-			cards_on_table.erase(c)
-			if from_player:
-				player_captured.append(c)
-			else:
-				opponent_captured.append(c)
-		
-		# Also the card played is "taken" if it captured anything
+	# Process capture
+	last_capture_player = from_player
+	for c in captured_cards:
+		cards_on_table.erase(c)
 		if from_player:
-			player_captured.append(card)
+			player_captured.append(c)
 		else:
-			opponent_captured.append(card)
+			opponent_captured.append(c)
+	
+	# The played card is also captured
+	if from_player:
+		player_captured.append(card)
+	else:
+		opponent_captured.append(card)
 		
-		# Check for Limpia
-		if cards_on_table.is_empty():
+	# Sequence Logic (Stair/Escalera)
+	# After the primary capture, check for sequential cards (J, Q, K...) remaining
+	# The sequence starts from the card VALUE
+	var next_val = get_next_in_sequence(card.value)
+	while next_val != -1:
+		var found_sequence_card = null
+		for table_card in cards_on_table:
+			if table_card.value == next_val:
+				found_sequence_card = table_card
+				break
+		
+		if found_sequence_card:
+			cards_on_table.erase(found_sequence_card)
 			if from_player:
-				player_score += 2
-				game_event_occurred.emit("LIMPIA", "PLAYER", 2)
-				print("LIMPIA! Player +2")
+				player_captured.append(found_sequence_card)
 			else:
-				opponent_score += 2
-				game_event_occurred.emit("LIMPIA", "OPPONENT", 2)
-				print("LIMPIA! Opponent +2")
+				opponent_captured.append(found_sequence_card)
+			# print("Sequence capture: ", found_sequence_card.value)
+			next_val = get_next_in_sequence(next_val)
 		else:
-			# Just a standard capture
+			break
+			
+	# Limpia Check (Performed AFTER sequence logic to ensure table is truly empty)
+	if cards_on_table.is_empty():
+		# Rule: No Limpia on the very last play of the entire deck (standard Cuarenta rule, optional but good to have)
+		# For now, we'll keep it simple: if table empty, Limpia.
+		# Note: If deck is empty and hands are empty, it's the last play. 
+		# We can check deck.size() == 0 and hands size == 0 before this? 
+		# Actually, this method runs before finalize_turn, so card is already out of hand.
+		# If deck is empty and (player_hand + opponent_hand) is empty... 
+		# But let's just stick to "Empty Table = Limpia" for now unless user asked for the exception.
+		if from_player:
+			player_score += 2
+			game_event_occurred.emit("LIMPIA", "PLAYER", 2)
+		else:
+			opponent_score += 2
+			game_event_occurred.emit("LIMPIA", "OPPONENT", 2)
+		
+		if check_for_winner(): return
+	else:
+		if not is_caida:
 			var team = "PLAYER" if from_player else "OPPONENT"
 			game_event_occurred.emit("CAPTURE", team, 0)
-		
-		last_capture_player = from_player
-		if check_for_winner(): return
-		
-		last_card_played = null # Reset Caida buffer
-	else:
-		# No capture, stays on table
-		cards_on_table.append(card)
-		last_card_played = card
-	
+			
+	last_card_played = null # Reset Caida buffer after any capture
+	check_for_winner() # Check again
+	finalize_turn(from_player)
+
+func finalize_turn(from_player: bool):
 	if from_player:
 		change_turn(GameState.OPPONENT_TURN)
 	else:
 		change_turn(GameState.PLAYER_TURN)
-		
-	# Check if round finished (both hands empty)
+	
 	if player_hand.is_empty() and opponent_hand.is_empty():
 		if not deck.is_empty():
-			print("Hands empty. Requesting new round deal...")
 			new_round_requested.emit()
 		else:
-			print("Deck empty! Calculating final points...")
 			calculate_round_end_points()
 
+func check_caida_on_play(card, from_player, is_capture):
+	pass # Helper placeholder if needed
+
 # --- Helper Methods for Cuarenta Rules ---
+
+# This function finds all possible sets of cards that can be captured by the played card.
+# It returns an Array of Arrays (each inner array is a valid capture option).
+func find_all_captures(played_card: CardData, table_cards: Array[CardData]) -> Array:
+	var options: Array = []
+	
+	# Option 1: Direct match (Caida or regular match)
+	for c in table_cards:
+		if c.value == played_card.value:
+			options.append([c])
+	
+	# Option 2: Sum match (only if played_card is not a face card)
+	if played_card.value <= 7: # Face cards (J, Q, K) cannot capture by Sum
+		var sum_matches = _find_all_subset_sums_recursive(played_card.value, table_cards, 0, [])
+		for match_set in sum_matches:
+			if match_set.size() > 1:
+				options.append(match_set)
+	
+	# Remove duplicates
+	var unique_options: Array = []
+	for opt in options:
+		var is_unique = true
+		for existing_opt in unique_options:
+			if opt.size() == existing_opt.size():
+				var all_match = true
+				for card in opt:
+					if not existing_opt.has(card):
+						all_match = false
+						break
+				if all_match:
+					is_unique = false
+					break
+		if is_unique:
+			unique_options.append(opt)
+			
+	return unique_options
+
+# Helper for find_all_captures to get all subset sums
+func _find_all_subset_sums_recursive(target: int, cards: Array[CardData], index: int, current_subset: Array[CardData]) -> Array:
+	var results: Array = []
+	var current_sum = 0
+	for c in current_subset:
+		current_sum += c.value
+
+	if current_sum == target:
+		results.append(current_subset.duplicate())
+		# Continue to find other combinations
+	
+	if index >= cards.size():
+		return results
+
+	# Try including cards[index]
+	var next_subset_with = current_subset.duplicate()
+	next_subset_with.append(cards[index])
+	if current_sum + cards[index].value <= target:
+		results.append_array(_find_all_subset_sums_recursive(target, cards, index + 1, next_subset_with))
+	
+	# Try excluding cards[index]
+	results.append_array(_find_all_subset_sums_recursive(target, cards, index + 1, current_subset))
+	
+	return results
+
+func resolve_pending_capture(option_index: int):
+	if not pending_card_played:
+		return
+		
+	# Re-calculate options to be safe (or we could cache them, but this is safer against state drift)
+	# Though waiting state means state shouldn't drift.
+	var options = find_all_captures(pending_card_played, cards_on_table)
+	
+	if option_index >= 0 and option_index < options.size():
+		execute_capture(pending_card_played, options[option_index], pending_from_player)
+	else:
+		print("Invalid capture choice index!")
+		# Fallback?
+		if options.size() > 0:
+			execute_capture(pending_card_played, options[0], pending_from_player)
+			
+	pending_card_played = null
 
 func get_next_in_sequence(val: int) -> int:
 	if val >= 1 and val <= 6: return val + 1
@@ -174,6 +292,11 @@ func find_subset_sum(target: int, available_cards: Array[CardData]) -> Array[Car
 		if c.value == target:
 			var result: Array[CardData] = [c]
 			return result
+	
+	# Rule change: Face cards (J, Q, K) cannot capture by Sum, only by match.
+	# If we didn't find a match above, and value is > 7, return empty.
+	if target > 7:
+		return []
 			
 	# Recursive search for combination
 	var initial_array: Array[CardData] = []

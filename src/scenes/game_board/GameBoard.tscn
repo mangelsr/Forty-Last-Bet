@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://cyam48ucuwca8"]
+[gd_scene load_steps=4 format=3 uid="uid://cyam48ucuwca8"]
 
 [ext_resource type="Script" uid="uid://cj77ognccjx03" path="res://src/scenes/game_board/GameBoard.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://maintheme" path="res://assets/theme/main_theme.tres" id="2_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(0.14902, 0.14902, 0.14902, 1)
@@ -21,6 +22,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2_theme")
 script = ExtResource("1_script")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -144,21 +146,54 @@ theme_override_constants/margin_right = 20
 [node name="HBoxContainer" type="HBoxContainer" parent="ScoreUI"]
 layout_mode = 2
 
-[node name="PlayerScore" type="Label" parent="ScoreUI/HBoxContainer"]
+[node name="PlayerStats" type="VBoxContainer" parent="ScoreUI/HBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="PlayerScore" type="Label" parent="ScoreUI/HBoxContainer/PlayerStats"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Player: 0"
+text = "GAME_PLAYER"
+
+[node name="PlayerCapturedCount" type="Label" parent="ScoreUI/HBoxContainer/PlayerStats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+text = "GAME_MY_CARDS"
 
 [node name="Spacer" type="Control" parent="ScoreUI/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="OpponentScore" type="Label" parent="ScoreUI/HBoxContainer"]
+[node name="MenuButton" type="Button" parent="ScoreUI/HBoxContainer"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "GAME_MENU"
+
+[node name="Spacer2" type="Control" parent="ScoreUI/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OpponentStats" type="VBoxContainer" parent="ScoreUI/HBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="OpponentScore" type="Label" parent="ScoreUI/HBoxContainer/OpponentStats"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Opponent: 0"
+text = "GAME_OPPONENT"
+horizontal_alignment = 2
+
+[node name="OpponentCapturedCount" type="Label" parent="ScoreUI/HBoxContainer/OpponentStats"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 18
+text = "GAME_OPP_CARDS"
+horizontal_alignment = 2
 
 [node name="MessageContainer" type="Control" parent="."]
 unique_name_in_owner = true
@@ -171,3 +206,5 @@ anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[connection signal="pressed" from="ScoreUI/HBoxContainer/MenuButton" to="." method="_on_menu_button_pressed"]

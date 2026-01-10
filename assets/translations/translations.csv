@@ -1,0 +1,51 @@
+keys,en,es
+MAIN_PLAY,PLAY,JUGAR
+MAIN_HOW_TO,HOW TO PLAY,CÓMO JUGAR
+MAIN_QUIT,QUIT,SALIR
+RULES_TITLE,HOW TO PLAY,CÓMO JUGAR
+RULES_TEXT,"[center][b]OBJECTIVE[/b]
+Capture cards to reach 40 points before your opponent!
+
+[b]HOW TO CAPTURE[/b]
+1. [b]Match:[/b] Play a card that matches the value of a card on the table.
+2. [b]Sum:[/b] Play a card equal to the sum of cards on the table (e.g., play 5 to capture 2 & 3). Note: J, Q, K cannot capture by sum.
+3. [b]Sequence:[/b] After any capture, if the next card in sequence (6 -> 7 -> J -> Q -> K) is on the table, you automatically take it!
+
+[b]SCORING[/b]
+[color=yellow]CAIDA (+2 pts)[/color]: Match the card your opponent JUST played.
+[color=cyan]LIMPIA (+2 pts)[/color]: Clear the entire table with your capture.
+[color=magenta]RONDA (+2 pts)[/color]: Start the round with 3 cards of the same value.
+
+[b]WINNING[/b]
+The first player to reach 40 points wins the game!
+[/center]","[center][b]OBJETIVO[/b]
+¡Captura cartas para llegar a 40 puntos antes que tu oponente!
+
+[b]CÓMO CAPTURAR[/b]
+1. [b]Par:[/b] Juega una carta que coincida con el valor de una en la mesa.
+2. [b]Suma:[/b] Juega una carta igual a la suma de varias en la mesa (ej. usa 5 para tomar 2 y 3). Nota: J, Q, K no suman.
+3. [b]Escalera:[/b] ¡Si tras capturar hay cartas en secuencia (6 -> 7 -> J -> Q -> K), te las llevas automáticamente!
+
+[b]PUNTUACIÓN[/b]
+[color=yellow]CAÍDA (+2 pts)[/color]: Iguala la carta que el oponente ACABA de jugar.
+[color=cyan]LIMPIA (+2 pts)[/color]: Deja la mesa vacía tras tu captura.
+[color=magenta]RONDA (+2 pts)[/color]: Inicia la ronda con 3 cartas del mismo valor.
+
+[b]VICTORIA[/b]
+¡El primero en llegar a 40 puntos gana!
+[/center]"
+BTN_BACK,BACK,VOLVER
+GAME_MENU,MENU,MENÚ
+GAME_PLAYER,Player,Jugador
+GAME_OPPONENT,Opponent,Oponente
+GAME_MY_CARDS,My Cards,Mis Cartas
+GAME_OPP_CARDS,Opp Cards,Cartas Oponente
+CAPTURE_TITLE,CHOOSE CAPTURE,ELIGE LLEVAR
+CAPTURE_PREFIX,Capture,Llevar
+EVENT_CAIDA,CAIDA,CAÍDA
+EVENT_LIMPIA,LIMPIA,LIMPIA
+EVENT_RONDA,RONDA,RONDA
+EVENT_DOBLE_RONDA,DOUBLE RONDA,DOBLE RONDA
+EVENT_CAPTURE,CAPTURE,LLEVA
+EVENT_VICTORY,VICTORY,VICTORIA
+EVENT_WINS,WINS,GANA
