@@ -12,6 +12,7 @@ extends PanelContainer
 @onready var bottom_value_label = %BottomValue
 @onready var suit_icon_label = %SuitIcon
 @onready var margin_container = $MarginContainer
+@onready var sfx_hover = $SfxHover
 
 var is_dragging: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
@@ -20,6 +21,9 @@ var target_rotation: float = 0.0
 
 var is_waving: bool = false
 var wave_offset: float = 0.0
+static var last_hover_sfx_ms_global: int = 0
+
+const HOVER_SFX_COOLDOWN_MS = 450
 
 func _ready():
 	if card_data:
@@ -155,7 +159,8 @@ func _on_mouse_entered():
 			var hand = game_board.get_node("%HandContainer")
 			if get_parent() != hand:
 				return
-				
+
+		_play_hover_sfx()
 		var tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		tween.tween_property(self, "scale", Vector2(1.1, 1.1), 0.2)
 		z_index = 10
@@ -181,3 +186,13 @@ func start_wave_animation(offset: float = 0.0):
 
 func stop_wave_animation():
 	is_waving = false
+
+func _play_hover_sfx():
+	if not sfx_hover:
+		return
+	var now_ms = Time.get_ticks_msec()
+	if now_ms - last_hover_sfx_ms_global < HOVER_SFX_COOLDOWN_MS:
+		return
+	last_hover_sfx_ms_global = now_ms
+	sfx_hover.stop()
+	sfx_hover.play()

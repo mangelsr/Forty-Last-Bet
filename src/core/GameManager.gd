@@ -25,6 +25,7 @@ signal turn_changed(new_state: GameState)
 signal new_round_requested
 signal game_event_occurred(type: String, team: String, points: int)
 signal game_over(winner_team: String, final_score_p: int, final_score_o: int)
+signal deck_reshuffled
 
 func _ready():
 	load_deck()
@@ -421,6 +422,7 @@ func reshuffle_all_cards():
 	
 	deck.shuffle()
 	last_card_played = null
+	deck_reshuffled.emit()
 
 func check_for_ronda(is_player: bool):
 	var hand = player_hand if is_player else opponent_hand

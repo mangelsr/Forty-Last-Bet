@@ -13,6 +13,12 @@ const GAME_OVER_MODAL_SCENE = preload("res://src/scenes/ui/GameOverModal.tscn")
 @onready var player_score_label = %PlayerScore
 @onready var opponent_score_label = %OpponentScore
 @onready var message_container = %MessageContainer
+@onready var sfx_round_start = %SfxRoundStart
+@onready var sfx_deal = %SfxDeal
+@onready var sfx_card_play = %SfxCardPlay
+@onready var sfx_capture = %SfxCapture
+
+var play_shuffle_next_deal: bool = true
 
 func _ready():
 	GameManager.turn_changed.connect(_on_turn_changed)
@@ -20,6 +26,7 @@ func _ready():
 	GameManager.game_event_occurred.connect(_on_game_event_occurred)
 	GameManager.game_over.connect(_on_game_over)
 	GameManager.capture_choice_requested.connect(_on_capture_choice_requested)
+	GameManager.deck_reshuffled.connect(_on_deck_reshuffled)
 	# Wait a frame for layout to settle
 	await get_tree().process_frame
 	start_game()
@@ -31,6 +38,9 @@ func start_game():
 	deal_round()
 
 func _on_game_event_occurred(type: String, team: String, points: int):
+	if type in ["CAPTURE", "CAIDA", "LIMPIA"]:
+		_play_sfx(sfx_capture)
+
 	var color = Color.WHITE
 	# Map type to translation key (e.g. CAIDA -> EVENT_CAIDA, DOBLE RONDA -> EVENT_DOBLE_RONDA)
 	var tr_key = "EVENT_" + type.replace(" ", "_")
@@ -76,6 +86,7 @@ func _on_capture_choice_requested(options: Array):
 	# Listen for selection
 	choice_ui.option_selected.connect(func(index):
 		GameManager.resolve_pending_capture(index)
+		_refresh_table_ui()
 		# UI handles its own destruction
 	)
 
@@ -153,20 +164,32 @@ func update_scores():
 func deal_round():
 	var p_cards = GameManager.deal_cards(5)
 	var o_cards = GameManager.deal_cards(5)
+
+	if play_shuffle_next_deal:
+		_play_sfx(sfx_round_start)
+		await _wait_for_sfx(sfx_round_start)
+		play_shuffle_next_deal = false
 	
 	GameManager.player_hand.append_array(p_cards)
 	GameManager.opponent_hand.append_array(o_cards)
 	
 	for i in range(5):
+		_play_sfx(sfx_deal)
 		spawn_card_to_hand(p_cards[i], true)
-		await get_tree().create_timer(0.1).timeout
+		await _wait_for_sfx(sfx_deal)		
+		_play_sfx(sfx_deal)
 		spawn_card_to_hand(o_cards[i], false)
-		await get_tree().create_timer(0.1).timeout
-	
+		await _wait_for_sfx(sfx_deal)		
+
 	# Check for Ronda bonus points
 	GameManager.check_for_ronda(true)
 	GameManager.check_for_ronda(false)
 	update_scores()
+
+func _refresh_table_ui():
+	for table_card in table_grid.get_children():
+		if table_card is CardUI and table_card.card_data not in GameManager.cards_on_table:
+			table_card.queue_free()
 
 func spawn_card_to_hand(data: CardData, is_player: bool):
 	var card_ui = CARD_UI_SCENE.instantiate() as CardUI
@@ -193,6 +216,9 @@ func _on_new_round_requested():
 	await get_tree().create_timer(1.0).timeout
 	deal_round()
 
+func _on_deck_reshuffled():
+	play_shuffle_next_deal = true
+
 func _on_turn_changed(new_state):
 	update_scores()
 	if new_state == GameManager.GameState.OPPONENT_TURN:
@@ -205,6 +231,7 @@ func run_opponent_ai():
 		play_card_to_table(card_ui, false)
 
 func play_card_to_table(card_ui: CardUI, is_player: bool):
+	_play_sfx(sfx_card_play)
 	card_ui.get_parent().remove_child(card_ui)
 	add_child(card_ui) # Temporary parent for animation
 	
@@ -217,7 +244,7 @@ func play_card_to_table(card_ui: CardUI, is_player: bool):
 	
 	await tween.finished
 	remove_child(card_ui)
-	
+
 	# Update logic first so we know if it was captured
 	GameManager.play_card_to_table(card_ui.card_data, is_player)
 	
@@ -238,3 +265,22 @@ func play_card_to_table(card_ui: CardUI, is_player: bool):
 			table_card.queue_free()
 	
 	update_scores()
+
+func _play_sfx(player: AudioStreamPlayer):
+	if not player:
+		return
+	player.stop()
+	player.play()
+
+func _wait_for_sfx(player: AudioStreamPlayer):
+	if not player or not player.stream:
+		return
+	var length = player.stream.get_length()
+	if length <= 0.0:
+		return
+	await get_tree().create_timer(length).timeout
+
+func _get_sfx_length(player: AudioStreamPlayer) -> float:
+	if not player or not player.stream:
+		return 0.0
+	return player.stream.get_length()

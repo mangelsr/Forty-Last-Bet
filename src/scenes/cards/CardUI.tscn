@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://b1234568aa"]
+[gd_scene load_steps=4 format=3 uid="uid://b1234568aa"]
 
 [ext_resource type="Script" uid="uid://cjueohfd36662" path="res://src/scenes/cards/CardUI.gd" id="1_script"]
+[ext_resource type="AudioStream" uid="uid://sfx_card_hover" path="res://assets/audio/card-hover.ogg" id="2_audio"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(1, 1, 1, 1)
@@ -59,3 +60,6 @@ theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 18
 text = "A"
 horizontal_alignment = 2
+
+[node name="SfxHover" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_audio")

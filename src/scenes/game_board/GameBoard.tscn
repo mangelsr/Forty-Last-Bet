@@ -1,7 +1,11 @@
-[gd_scene load_steps=4 format=3 uid="uid://cyam48ucuwca8"]
+[gd_scene load_steps=8 format=3 uid="uid://cyam48ucuwca8"]
 
 [ext_resource type="Script" uid="uid://cj77ognccjx03" path="res://src/scenes/game_board/GameBoard.gd" id="1_script"]
 [ext_resource type="Theme" uid="uid://maintheme" path="res://assets/theme/main_theme.tres" id="2_theme"]
+[ext_resource type="AudioStream" uid="uid://sfx_card_fan" path="res://assets/audio/card-fan.ogg" id="3_audio"]
+[ext_resource type="AudioStream" uid="uid://sfx_card_deal" path="res://assets/audio/card-shove.ogg" id="4_audio"]
+[ext_resource type="AudioStream" uid="uid://sfx_card_play" path="res://assets/audio/card-play.ogg" id="5_audio"]
+[ext_resource type="AudioStream" uid="uid://sfx_card_capture" path="res://assets/audio/card-capture.ogg" id="6_audio"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(0.14902, 0.14902, 0.14902, 1)
@@ -206,5 +210,21 @@ anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="SfxRoundStart" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("3_audio")
+
+[node name="SfxDeal" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("4_audio")
+
+[node name="SfxCardPlay" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("5_audio")
+
+[node name="SfxCapture" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("6_audio")
 
 [connection signal="pressed" from="ScoreUI/HBoxContainer/MenuButton" to="." method="_on_menu_button_pressed"]
