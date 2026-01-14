@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" uid="uid://cj77ognccjx03" path="res://src/scenes/game_board/GameBoard.gd" id="1_script"]
 [ext_resource type="Theme" uid="uid://maintheme" path="res://assets/theme/main_theme.tres" id="2_theme"]
-[ext_resource type="AudioStream" uid="uid://sfx_card_fan" path="res://assets/audio/card-fan.ogg" id="3_audio"]
-[ext_resource type="AudioStream" uid="uid://sfx_card_deal" path="res://assets/audio/card-shove.ogg" id="4_audio"]
-[ext_resource type="AudioStream" uid="uid://sfx_card_play" path="res://assets/audio/card-play.ogg" id="5_audio"]
-[ext_resource type="AudioStream" uid="uid://sfx_card_capture" path="res://assets/audio/card-capture.ogg" id="6_audio"]
+[ext_resource type="AudioStream" path="res://assets/audio/card-fan.ogg" id="3_audio"]
+[ext_resource type="AudioStream" path="res://assets/audio/card-shove.ogg" id="4_audio"]
+[ext_resource type="AudioStream" path="res://assets/audio/card-play.ogg" id="5_audio"]
+[ext_resource type="AudioStream" path="res://assets/audio/card-capture.ogg" id="6_audio"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(0.14902, 0.14902, 0.14902, 1)
