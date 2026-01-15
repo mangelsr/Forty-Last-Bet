@@ -14,16 +14,23 @@ extends PanelContainer
 @onready var margin_container = $MarginContainer
 @onready var sfx_hover = $SfxHover
 
-var is_dragging: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
 var original_position: Vector2 = Vector2.ZERO
 var target_rotation: float = 0.0
 
-var is_waving: bool = false
 var wave_offset: float = 0.0
 static var last_hover_sfx_ms_global: int = 0
 
 const HOVER_SFX_COOLDOWN_MS = 450
+
+enum CardState {
+	IDLE,
+	HOVERED,
+	DRAGGING,
+	WAVING
+}
+
+var state: CardState = CardState.IDLE
 
 func _ready():
 	if card_data:
@@ -37,22 +44,23 @@ func _ready():
 	gui_input.connect(_on_gui_input)
 
 func _process(_delta):
-	if is_dragging:
-		var target_pos = get_global_mouse_position() - drag_offset
-		global_position = global_position.lerp(target_pos, 0.2)
-		
-		# Dynamic tilt based on movement velocity
-		var velocity = (target_pos - global_position).x
-		target_rotation = clamp(velocity * 0.05, -0.2, 0.2)
-		rotation = lerp_angle(rotation, target_rotation, 0.1)
-	elif is_waving:
-		# Synchronized up and down movement with offset
-		var time = Time.get_ticks_msec() / 1000.0
-		var wave = sin(time * 3.0 + wave_offset) * 4.0 # Speed 3.0, Amplitude 4px
-		global_position.y = original_position.y + wave
-		rotation = lerp_angle(rotation, 0, 0.1)
-	else:
-		rotation = lerp_angle(rotation, 0, 0.1)
+	match state:
+		CardState.DRAGGING:
+			var target_pos = get_global_mouse_position() - drag_offset
+			global_position = global_position.lerp(target_pos, 0.2)
+			
+			# Dynamic tilt based on movement velocity
+			var velocity = (target_pos - global_position).x
+			target_rotation = clamp(velocity * 0.05, -0.2, 0.2)
+			rotation = lerp_angle(rotation, target_rotation, 0.1)
+		CardState.WAVING:
+			# Synchronized up and down movement with offset
+			var time = Time.get_ticks_msec() / 1000.0
+			var wave = sin(time * 3.0 + wave_offset) * 4.0 # Speed 3.0, Amplitude 4px
+			global_position.y = original_position.y + wave
+			rotation = lerp_angle(rotation, 0, 0.1)
+		_:
+			rotation = lerp_angle(rotation, 0, 0.1)
 
 func set_card_data(value: CardData):
 	card_data = value
@@ -124,18 +132,15 @@ func start_drag():
 		if get_parent() != hand:
 			return
 
-	is_dragging = true
+	set_state(CardState.DRAGGING)
 	drag_offset = get_global_mouse_position() - global_position
-	z_index = 100 # Ensure it's on top
-	scale = Vector2(1.1, 1.1)
 	original_position = global_position # Update in case it moved in hand
 
 func stop_drag():
-	if not is_dragging:
+	if state != CardState.DRAGGING:
 		return
-		
-	is_dragging = false
-	z_index = 0
+
+	set_state(CardState.IDLE)
 	
 	# Check if dropped in table area
 	var game_board = get_tree().current_scene
@@ -152,40 +157,70 @@ func stop_drag():
 	tween.tween_property(self, "rotation", 0.0, 0.2)
 
 func _on_mouse_entered():
-	if not is_dragging:
-		# Only hover if in player's hand
-		var game_board = get_tree().current_scene
-		if game_board:
-			var hand = game_board.get_node("%HandContainer")
-			if get_parent() != hand:
-				return
+	if state == CardState.DRAGGING:
+		return
+	if not _is_in_hand():
+		return
 
-		_play_hover_sfx()
-		var tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tween.tween_property(self, "scale", Vector2(1.1, 1.1), 0.2)
-		z_index = 10
+	_play_hover_sfx()
+	set_state(CardState.HOVERED)
 
 func _on_mouse_exited():
-	if not is_dragging:
-		var game_board = get_tree().current_scene
-		if game_board:
-			var hand = game_board.get_node("%HandContainer")
-			if get_parent() != hand:
-				return
+	if state == CardState.DRAGGING:
+		return
+	if not _is_in_hand():
+		return
 
-		var tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.2)
-		z_index = 0
+	set_state(CardState.IDLE)
 
 func update_original_position():
 	original_position = global_position
 
 func start_wave_animation(offset: float = 0.0):
-	is_waving = true
 	wave_offset = offset
+	set_state(CardState.WAVING)
 
 func stop_wave_animation():
-	is_waving = false
+	set_state(CardState.IDLE)
+
+func set_state(next_state: CardState):
+	if state == next_state:
+		return
+
+	_exit_state(state, next_state)
+	state = next_state
+	_enter_state(state)
+
+func _enter_state(next_state: CardState):
+	match next_state:
+		CardState.HOVERED:
+			var tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			tween.tween_property(self, "scale", Vector2(1.1, 1.1), 0.2)
+			z_index = 10
+		CardState.DRAGGING:
+			z_index = 100 # Ensure it's on top
+			scale = Vector2(1.1, 1.1)
+		_:
+			pass
+
+func _exit_state(prev_state: CardState, next_state: CardState):
+	match prev_state:
+		CardState.HOVERED:
+			if next_state != CardState.DRAGGING:
+				var tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+				tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.2)
+				z_index = 0
+		CardState.DRAGGING:
+			z_index = 0
+		_:
+			pass
+
+func _is_in_hand() -> bool:
+	var game_board = get_tree().current_scene
+	if game_board:
+		var hand = game_board.get_node("%HandContainer")
+		return get_parent() == hand
+	return false
 
 func _play_hover_sfx():
 	if not sfx_hover:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://cyam48ucuwca8"]
+[gd_scene load_steps=11 format=3 uid="uid://cyam48ucuwca8"]
 
 [ext_resource type="Script" uid="uid://cj77ognccjx03" path="res://src/scenes/game_board/GameBoard.gd" id="1_script"]
 [ext_resource type="Theme" uid="uid://maintheme" path="res://assets/theme/main_theme.tres" id="2_theme"]
@@ -6,6 +6,9 @@
 [ext_resource type="AudioStream" path="res://assets/audio/card-shove.ogg" id="4_audio"]
 [ext_resource type="AudioStream" path="res://assets/audio/card-play.ogg" id="5_audio"]
 [ext_resource type="AudioStream" path="res://assets/audio/card-capture.ogg" id="6_audio"]
+[ext_resource type="Script" path="res://src/scenes/game_board/GameBoardUI.gd" id="7_script"]
+[ext_resource type="Script" path="res://src/scenes/game_board/GameBoardAudio.gd" id="8_script"]
+[ext_resource type="Script" path="res://src/scenes/game_board/GameBoardAnimator.gd" id="9_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(0.14902, 0.14902, 0.14902, 1)
@@ -28,6 +31,24 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_script")
+
+[node name="GameBoardUI" type="Node" parent="."]
+script = ExtResource("7_script")
+message_container_path = NodePath("../MessageContainer")
+player_score_label_path = NodePath("../ScoreUI/HBoxContainer/PlayerStats/PlayerScore")
+opponent_score_label_path = NodePath("../ScoreUI/HBoxContainer/OpponentStats/OpponentScore")
+player_captured_label_path = NodePath("../ScoreUI/HBoxContainer/PlayerStats/PlayerCapturedCount")
+opponent_captured_label_path = NodePath("../ScoreUI/HBoxContainer/OpponentStats/OpponentCapturedCount")
+
+[node name="GameBoardAudio" type="Node" parent="."]
+script = ExtResource("8_script")
+
+[node name="GameBoardAnimator" type="Node" parent="."]
+script = ExtResource("9_script")
+hand_container_path = NodePath("../PlayerHand/HandContainer")
+opponent_hand_container_path = NodePath("../OpponentHand/OpponentHandContainer")
+table_grid_path = NodePath("../TableArea/TableGrid")
+deck_position_path = NodePath("../DeckPosition")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
