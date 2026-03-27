@@ -1,5 +1,7 @@
 # Fourty Last Bet
 
+🎮 **[Play on Itch.io](https://mangelsr.itch.io/fourty-last-bet)**
+
 **Fourty Last Bet** is a digital implementation of the traditional Ecuadorian card game **"Cuarenta"**, built in Godot 4. This project serves as a technical demonstration of game architecture, UI systems, and rule implementation for a job application showcase.
 
 ## 🎮 Game Overview
